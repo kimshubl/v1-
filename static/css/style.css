@@ -1,0 +1,420 @@
+/* static/css/style.css - 다크 테마 스타일 복원 */
+
+/* === 기본 설정 === */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: #1C1C1E; /* iOS 다크모드 배경 */
+  color: #E0E0E0; /* 기본 밝은 회색 텍스트 */
+  margin: 0;
+  padding: 0;
+  display: flex; /* 컨테이너 가운데 정렬 위해 */
+  justify-content: center;
+  align-items: flex-start; /* 상단 정렬 */
+  min-height: 100vh;
+  padding-top: 20px; /* 상단 여백 */
+  box-sizing: border-box;
+}
+
+.container { /* 콘텐츠 영역 */
+  max-width: 450px; /* 앱 화면과 유사한 너비 */
+  width: 100%;
+  background-color: #1C1C1E; /* 배경과 동일하거나 약간 다르게 (#2C2C2E) */
+  padding: 20px;
+  box-sizing: border-box;
+  /* 필요 시 border-radius, box-shadow 추가 */
+}
+
+/* === 업로드 섹션 === */
+#upload-section {
+  text-align: center;
+}
+
+/* 페이지 제목 */
+#upload-section .header-text h1 {
+  font-size: 1.8em;
+  font-weight: bold;
+  color: #FFFFFF; /* 흰색 */
+  margin-bottom: 30px;
+  line-height: 1.3;
+}
+
+/* 사진 업로드 박스 */
+#upload-box {
+  border: 2px dashed #555; /* 점선 테두리 */
+  border-radius: 10px;
+  padding: 50px 20px;
+  margin-bottom: 30px;
+  cursor: pointer;
+  background-color: #2C2C2E; /* 박스 내부 약간 다른 색 */
+  transition: background-color 0.2s;
+}
+#upload-box:hover {
+  background-color: #3A3A3C;
+}
+
+/* 업로드 박스 내 텍스트 */
+#upload-box p {
+  margin: 10px 0;
+  color: #AEAEB2; /* iOS 보조 텍스트 색상 */
+  font-size: 0.9em;
+}
+
+/* '사진선택' 버튼 (업로드 박스 안) */
+.upload-button {
+  background-color: #E84393; /* 스크린샷의 빨간색 계열 */
+  color: #FFFFFF;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1em;
+  margin-top: 15px;
+  transition: background-color 0.2s;
+}
+.upload-button:hover {
+  background-color: #D83383; /* 호버 시 약간 어둡게 */
+}
+.upload-button:disabled { /* 비활성화 시 */
+  background-color: #2C2C2E;
+  color: #555;
+  cursor: default;
+}
+
+/* 업로드된 이미지 미리보기 */
+#uploadedImagePreview {
+    display: block; /* 가운데 정렬을 위해 block으로 변경 */
+    margin: 20px auto; /* 위아래 여백 및 가운데 정렬 */
+    max-width: 80%;
+    border-radius: 8px;
+    border: 1px solid #333; /* 어두운 테두리 */
+}
+#uploadedImagePreview.loading { /* 로딩 중 흐리게 */
+    opacity: 0.5;
+    transition: opacity 0.3s ease-in-out;
+}
+
+
+/* '분석 시작' / '다시 시도하기' 버튼 */
+.analyze-button {
+  background-color: #E84393; /* 스크린샷의 빨간 계열 */
+  color: white;
+  padding: 14px 0; /* 높이 조정 */
+  border: none;
+  border-radius: 25px; /* 알약 형태 */
+  cursor: pointer;
+  font-size: 1.1em;
+  font-weight: bold;
+  display: block; /* 너비 100% 차지 */
+  width: 100%;
+  margin-top: 30px; /* 위쪽 여백 */
+  transition: background-color 0.2s;
+}
+.analyze-button:hover {
+  background-color: #D83383; /* 호버 시 약간 어둡게 */
+}
+.analyze-button:disabled { /* 비활성화 시 */
+  background-color: #555;
+  color: #999;
+  cursor: default;
+}
+
+/* 로딩/에러 메시지 */
+#loading-message, #error-message {
+  text-align: center;
+  margin-top: 20px;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 0.95em;
+}
+#loading-message {
+  color: #A0D3FF; /* 밝은 파랑 */
+  background-color: #004085; /* 어두운 파랑 배경 */
+  border: 1px solid #003065;
+}
+#error-message {
+  color: #FFB0B5; /* 밝은 빨강 */
+  background-color: #721c24; /* 어두운 빨강 배경 */
+  border: 1px solid #520c14;
+}
+
+
+/* === 결과 섹션 === */
+#result-section {
+    /* 필요 시 결과 섹션만의 스타일 추가 */
+}
+
+/* 결과 헤더 (뒤로가기 버튼, 제목) */
+.result-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  position: relative; /* 제목 중앙 정렬 위해 */
+}
+.result-header button#back-button { /* 뒤로가기 버튼 */
+  background: none;
+  border: none;
+  color: #0A84FF; /* iOS 블루 */
+  font-size: 1.8em; /* 크기 키움 */
+  cursor: pointer;
+  padding: 0 10px 0 0; /* 오른쪽 패딩만 */
+  line-height: 1;
+}
+.result-header h2 { /* '분석결과' 제목 */
+  flex-grow: 1; /* 남은 공간 차지 */
+  text-align: center;
+  color: #FFFFFF; /* 흰색 */
+  font-size: 1.2em;
+  font-weight: 600;
+  margin: 0;
+  padding-right: 30px; /* 뒤로가기 버튼 공간 확보 */
+}
+
+/* 가장 닮은 캐릭터 이름 */
+#result-section h3#top-character-name {
+  text-align: center;
+  font-size: 1.8em;
+  font-weight: bold;
+  color: #FFFFFF; /* 흰색 */
+  margin-bottom: 25px;
+}
+
+/* 이미지 비교 영역 (사용자 사진, 캐릭터 사진) */
+.image-comparison {
+  display: flex;
+  justify-content: space-evenly; /* 간격 벌림 */
+  align-items: center;
+  margin-bottom: 25px;
+  gap: 15px; /* 이미지 사이 간격 */
+}
+.image-comparison img {
+  max-width: 46%; /* 약간 줄임 */
+  height: auto;
+  border-radius: 12px; /* 더 둥글게 */
+  border: 1px solid #333; /* 테두리 색상 */
+  aspect-ratio: 1 / 1; /* 정사각형 비율 */
+  object-fit: cover; /* 비율 유지하며 채우기 */
+}
+
+/* 결과 설명 텍스트 */
+#result-text {
+  text-align: center;
+  margin-bottom: 35px;
+  font-size: 1em;
+  color: #AEAEB2; /* iOS 보조 텍스트 */
+  line-height: 1.5;
+  white-space: pre-line; /* \n 줄바꿈 적용 */
+}
+
+/* 상세 분석 결과 영역 */
+#prediction-details h3 { /* '상세 분석 결과 (%)' 제목 */
+  text-align: left; /* 왼쪽 정렬 */
+  color: #FFFFFF; /* 흰색 */
+  font-size: 1.1em;
+  font-weight: 600;
+  margin-bottom: 15px;
+  padding-left: 5px; /* 약간 들여쓰기 */
+}
+
+/* 예측 결과 막대 바 */
+.prediction-bar {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+}
+.prediction-label { /* 클래스 이름 (탄지로 등) */
+  width: 100px; /* 너비 고정 */
+  text-align: left;
+  margin-right: 10px;
+  font-size: 0.95em;
+  color: #E0E0E0; /* 밝은 회색 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* 긴 이름 ... 처리 */
+}
+.prediction-progress-bg { /* 막대 바 배경 */
+  flex-grow: 1;
+  background-color: #3A3A3C; /* 바 배경 어둡게 */
+  border-radius: 8px; /* 둥글게 */
+  height: 8px; /* 바 높이 */
+  overflow: hidden;
+}
+.prediction-progress { /* 실제 진행률 막대 */
+  background-color: #5E5CE6; /* iOS 인디고/블루 계열 */
+  height: 100%;
+  border-radius: 8px;
+  text-align: right;
+  /* 퍼센트 숫자 숨김 (필요 시 font-size 조정) */
+  color: white;
+  font-size: 0em;
+  line-height: 8px; /* 바 높이와 맞춤 */
+  padding-right: 5px;
+  box-sizing: border-box;
+  white-space: nowrap;
+  transition: width 0.5s ease-in-out; /* 너비 변경 애니메이션 */
+}
+.prediction-progress.top { /* 1위 막대 강조 */
+   background-color: #30D158; /* iOS 그린 계열 */
+}
+
+/* === 갤러리 페이지 관련 스타일 제거 === */
+/* .gallery-container, .gallery-title, .image-grid, .grid-item 등 삭제 */
+/* .analyze-link-button (갤러리 하단 버튼) 삭제 */
+
+/* === 분석 페이지의 갤러리 돌아가기 링크 === */
+/* 필요하다면 여기에 스타일 추가, 또는 analyze.html 에서 인라인 스타일 사용 */
+.back-to-gallery {
+    display: block;
+    text-align: center;
+    margin-top: 10px; /* 위쪽 여백 조정 */
+    margin-bottom: 20px; /* 아래쪽 여백 조정 */
+}
+.back-to-gallery a {
+    color: #0A84FF; /* iOS 블루 */
+    text-decoration: none;
+    font-size: 0.95em;
+}
+.back-to-gallery a:hover {
+    text-decoration: underline;
+}
+
+/* === 반응형 조정 (선택 사항) === */
+@media (max-width: 600px) {
+    .container {
+        margin: 10px;
+        padding: 15px;
+    }
+     #upload-section .header-text h1 { font-size: 1.6em; }
+     #result-section h3#top-character-name { font-size: 1.6em; }
+     .image-comparison img { max-width: 45%; }
+     .prediction-label { width: 80px; font-size: 0.9em; }
+}
+
+
+/* === 갤러리 페이지 스타일 (기존 CSS 하단에 추가) === */
+.gallery-container {
+  text-align: center;
+}
+.gallery-title {
+  font-size: 1.8em;
+  font-weight: bold;
+  color: #FFFFFF;
+  margin-bottom: 40px;
+  line-height: 1.3;
+}
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  max-width: 400px;
+  margin: 0 auto; /* 가운데 정렬 */
+}
+.grid-item a {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: #2C2C2E;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  position: relative; /* 캡션 위치 위해 */
+}
+.grid-item a:hover {
+ transform: translateY(-5px);
+ box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+}
+.grid-item img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 4; /* 이미지 비율 */
+  object-fit: cover;
+}
+.grid-item .caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  font-size: 0.9em;
+  padding: 8px;
+  text-align: center;
+  font-weight: 500;
+}
+
+
+/* === 공유 버튼 섹션 === */
+.share-section {
+  text-align: center;
+  margin-top: 35px; /* 상세 결과와 간격 */
+  margin-bottom: 25px; /* 재시도 버튼과 간격 */
+  padding-top: 20px; /* 위쪽 구분선 역할 */
+  border-top: 1px solid #3A3A3C; /* 구분선 */
+}
+.share-section h3 {
+  color: #E0E0E0; /* 밝은 회색 */
+  font-size: 1em; /* '상세 분석 결과' 제목과 비슷하게 */
+  font-weight: 600;
+  margin-bottom: 18px;
+}
+.share-buttons {
+  display: flex;
+  justify-content: center; /* 버튼들 가운데 정렬 */
+  align-items: center; /* 수직 가운데 정렬 */
+  gap: 20px; /* 버튼 사이 간격 */
+  flex-wrap: wrap; /* 화면 작을 때 줄바꿈 */
+}
+.share-button {
+  display: inline-flex; /* 아이콘/텍스트 정렬 위해 */
+  align-items: center;
+  justify-content: center;
+  padding: 0; /* 내부 여백 제거 (아이콘 크기로 조절) */
+  border: none; /* 테두리 제거 */
+  border-radius: 50%; /* 원형 버튼 */
+  background-color: #2C2C2E; /* 버튼 배경 (기본 다크) */
+  color: #E0E0E0; /* 아이콘 색상 (기본) */
+  text-decoration: none;
+  transition: background-color 0.2s, transform 0.1s;
+  cursor: pointer;
+  width: 44px; /* 버튼 너비 */
+  height: 44px; /* 버튼 높이 */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* 약간의 그림자 */
+}
+.share-button:hover {
+  background-color: #3A3A3C; /* 호버 시 약간 밝게 */
+  transform: translateY(-2px); /* 살짝 위로 이동 */
+}
+.share-button:active {
+  transform: translateY(0); /* 클릭 시 원래 위치로 */
+}
+
+.share-button img {
+  width: 22px; /* 아이콘 크기 */
+  height: 22px;
+  /* 만약 아이콘이 검정색일 경우 흰색으로 보이게 하려면 아래 필터 사용 */
+  /* filter: brightness(0) invert(1); */
+}
+
+/* 복사 완료 피드백 메시지 스타일 */
+#copy-feedback {
+ display: none; /* 초기 상태 숨김 */
+ margin-left: 5px; /* 버튼과의 간격 약간 조정 */
+ font-size: 0.9em;
+ color: #30D158; /* iOS Green */
+ vertical-align: middle; /* 버튼과 수직 정렬 */
+}
+
+
+/* (선택 사항) 플랫폼별 배경색 지정 */
+/*
+.share-button.facebook { background-color: #1877F2; }
+.share-button.twitter { background-color: #1DA1F2; }
+.share-button.instagram { background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%,#d6249f 60%,#285AEB 90%); }
+.share-button.copy-url { background-color: #6c757d; }
+.share-button.facebook img,
+.share-button.twitter img,
+.share-button.instagram img,
+.share-button.copy-url img {
+  filter: brightness(0) invert(1); // 아이콘 흰색으로
+}
+*/
