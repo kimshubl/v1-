@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI가 보는 나와 닮은 캐릭터</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- 갤러리 전용 스타일 추가 -->
+    <style>
+        .gallery-container {
+            text-align: center;
+        }
+        .gallery-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #FFFFFF;
+            margin-bottom: 40px; /* 제목과 그리드 사이 간격 */
+        }
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* 2열 그리드 */
+            gap: 20px; /* 이미지 사이 간격 */
+            max-width: 400px; /* 그리드 최대 너비 */
+            margin: 0 auto; /* 가운데 정렬 */
+        }
+        .grid-item a {
+            display: block;
+            text-decoration: none;
+            color: inherit; /* 링크 색상 상속 */
+            border-radius: 12px;
+            overflow: hidden; /* 이미지 모서리 둥글게 */
+            background-color: #2C2C2E; /* 배경색 */
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            position: relative; /* 캡션 위치 위해 */
+        }
+         .grid-item a:hover {
+            transform: translateY(-5px); /* 호버 시 살짝 위로 */
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+         }
+
+        .grid-item img {
+            display: block;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 3 / 4; /* 이미지 비율 (조정 가능) */
+            object-fit: cover; /* 비율 유지하며 채우기 */
+        }
+        /* 이미지 위에 텍스트 오버레이 (선택 사항) */
+        .grid-item .caption {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.6); /* 반투명 검정 배경 */
+            color: white;
+            font-size: 0.9em;
+            padding: 8px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container gallery-container">
+        <h1 class="gallery-title">인공지능이 보는<br>나와 닮은 캐릭터는?</h1>
+
+        <div class="image-grid">
+            {% for item in gallery_items %}
+            <div class="grid-item">
+                <a href="{{ item.link }}">
+                    <img src="{{ url_for('static', filename=item.image) }}" alt="{{ item.title }}">
+                     <!-- 이미지 위에 제목 표시 (선택 사항) -->
+                     <div class="caption">{{ item.title }}</div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

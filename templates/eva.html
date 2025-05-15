@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI가 보는 나와 닮은 캐릭터 (에반게리온)</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Teachable Machine 라이브러리 로드 -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <style>
+        /* 추가 스타일: 로딩 중 이미지 흐리게 */
+        #uploadedImagePreview.loading {
+            opacity: 0.5;
+            transition: opacity 0.3s ease-in-out;
+        }
+        /* 복사 완료 피드백 스타일 */
+        #copy-feedback {
+           display: none; /* 초기 상태 숨김 */
+           margin-left: 10px;
+           font-size: 0.9em;
+           color: #30D158; /* iOS Green */
+           vertical-align: middle; /* 버튼과 수직 정렬 */
+        }
+        /* 공유 버튼 관련 스타일 (style.css에도 있지만 중복 방지 및 확인용) */
+        .share-section {
+            text-align: center;
+            margin-top: 35px;
+            margin-bottom: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #3A3A3C;
+        }
+        .share-section h3 {
+            color: #E0E0E0;
+            font-size: 1em;
+            font-weight: 600;
+            margin-bottom: 18px;
+        }
+        .share-buttons {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .share-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border: none;
+            border-radius: 50%;
+            background-color: #2C2C2E;
+            color: #E0E0E0;
+            text-decoration: none;
+            transition: background-color 0.2s, transform 0.1s;
+            cursor: pointer;
+            width: 44px;
+            height: 44px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .share-button:hover {
+            background-color: #3A3A3C;
+            transform: translateY(-2px);
+        }
+        .share-button:active {
+            transform: translateY(0);
+        }
+        .share-button img {
+            width: 22px;
+            height: 22px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- === 업로드 섹션 === -->
+        <div id="upload-section">
+            <div class="header-text">
+                <h1>인공지능이 보는<br>나와 닮은 에반게리온<br>캐릭터는?</h1>
+            </div>
+            <div id="upload-box">
+                <p>여기에 사진을 올려주세요</p>
+                <p>또는</p>
+                <button type="button" class="upload-button" id="select-button">사진선택
+                    <!-- 숨겨진 파일 입력 요소 -->
+                    <input type="file" id="imageUpload" accept="image/*" style="display: none;"/>
+                </button>
+            </div>
+
+            <!-- 로딩 및 오류 메시지 표시 영역 -->
+            <div id="loading-message" style="display: none;"></div>
+            <div id="error-message" style="display: none;"></div>
+
+            <!-- 업로드된 이미지 미리보기 -->
+            <img id="uploadedImagePreview" style="display: none; max-width: 80%; margin-top: 20px; border-radius: 8px;" alt="Uploaded Preview"/>
+
+            <!-- 분석 시작 버튼 (이미지 선택 후 표시) -->
+             <button type="button" class="analyze-button" id="analyze-button" style="display: none;">분석 시작하기</button>
+        </div>
+
+        <!-- === 결과 섹션 (분석 완료 후 표시) === -->
+        <div id="result-section" style="display: none;">
+             <div class="result-header">
+                <button type="button" id="back-button">←</button>
+                <h2>분석 결과</h2>
+            </div>
+            <h3 id="top-character-name"></h3> <!-- 가장 닮은 캐릭터 이름 -->
+            <div class="image-comparison">
+                <img id="result-user-image" src="#" alt="사용자 사진">
+                <img id="result-character-image" src="#" alt="캐릭터 이미지">
+            </div>
+            <div id="result-text"></div> <!-- 결과 설명 텍스트 -->
+            <div id="prediction-details">
+                <h3>상세 분석 결과 (%)</h3>
+                <div id="predictions-list">
+                    <!-- 예측 결과 막대 그래프가 동적으로 생성될 영역 -->
+                </div>
+            </div>
+
+            <!-- === 공유 버튼 섹션 === -->
+            <div class="share-section">
+                <h3>결과 공유하기</h3>
+                <div class="share-buttons">
+                    <!-- Facebook -->
+                    <a id="share-facebook" class="share-button facebook" href="#" target="_blank" title="페이스북에 공유">
+                        <!-- 아이콘 경로는 실제 파일 위치에 맞게 조정하세요 -->
+                        <img src="{{ url_for('static', filename='icons/facebook.png') }}" alt="Facebook">
+                    </a>
+                    <!-- X (Twitter) -->
+                    <a id="share-twitter" class="share-button twitter" href="#" target="_blank" title="X에 공유">
+                         <img src="{{ url_for('static', filename='icons/twitter.png') }}" alt="X (Twitter)">
+                    </a>
+                    <!-- URL 복사 -->
+                    <button type="button" id="share-copy-url" class="share-button copy-url" title="URL 복사">
+                         <img src="{{ url_for('static', filename='icons/link.png') }}" alt="Copy URL">
+                    </button>
+                    <!-- Instagram -->
+                     <a id="share-instagram" class="share-button instagram" href="https://www.instagram.com" target="_blank" title="인스타그램 (결과 이미지를 저장하여 공유하세요)">
+                         <img src="{{ url_for('static', filename='icons/instagram.png') }}" alt="Instagram">
+                     </a>
+                    <!-- 복사 완료 피드백 메시지 -->
+                    <span id="copy-feedback">복사 완료!</span>
+                </div>
+            </div>
+            <!-- ======================== -->
+
+             <!-- 다시 시도하기 버튼 -->
+            <button type="button" class="analyze-button" id="retry-button">다시 시도하기</button>
+        </div>
+    </div>
+
+    <!-- Flask에서 전달된 데이터를 JavaScript 변수로 변환 -->
+    <script>
+        let characterMap1 = {}; // 기본 빈 객체
+        try {
+            // Flask/Jinja가 렌더링한 JavaScript 객체 리터럴을 직접 할당
+            characterMap1 = {{ character_map1 | tojson | safe }};
+            console.log("Character Map Loaded:", characterMap1);
+        } catch (e) {
+            console.error("캐릭터 맵 데이터 처리 오류:", e);
+            // 오류 발생 시 처리 (예: 빈 객체 유지, 사용자 알림)
+            const errorDiv = document.getElementById('error-message'); // 이 시점에는 아직 없을 수 있음
+            if(errorDiv) {
+                 errorDiv.textContent = '캐릭터 정보 로딩 실패. 페이지 새로고침 필요.';
+                 errorDiv.style.display = 'block';
+            }
+            characterMap1 = {}; // 안전하게 빈 객체로 설정
+        }
+    </script>
+
+
+    <!-- 메인 애플리케이션 로직 -->
+    <script>
+        // --- Teachable Machine 모델 설정 (DOM과 무관) ---
+        const MODEL_PATH = "/static/evangelion/"; // ★★★ 실제 모델 경로로 수정하세요!
+        const modelURL = MODEL_PATH + "model.json";
+        const metadataURL = MODEL_PATH + "metadata.json";
+        let model; // 로드된 모델 저장 변수
+
+        // === DOM이 완전히 로드된 후 스크립트 실행 ===
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- HTML 요소 참조 변수 ---
+            const selectButton = document.getElementById('select-button');
+            const imageUploadInput = document.getElementById('imageUpload');
+            const uploadedImagePreview = document.getElementById('uploadedImagePreview');
+            const uploadBox = document.getElementById('upload-box');
+            const loadingMessage = document.getElementById('loading-message');
+            const errorMessage = document.getElementById('error-message');
+            const analyzeButton = document.getElementById('analyze-button');
+            const resultSection = document.getElementById('result-section');
+            const uploadSection = document.getElementById('upload-section');
+            const backButton = document.getElementById('back-button');
+            const retryButton = document.getElementById('retry-button');
+            const topCharacterNameEl = document.getElementById('top-character-name');
+            const resultUserImageEl = document.getElementById('result-user-image');
+            const resultCharacterImageEl = document.getElementById('result-character-image');
+            const resultTextEl = document.getElementById('result-text');
+            const predictionsListDiv = document.getElementById('predictions-list');
+            // 공유 버튼 요소 참조
+            const shareFacebookBtn = document.getElementById('share-facebook');
+            const shareTwitterBtn = document.getElementById('share-twitter');
+            let shareCopyUrlBtn = document.getElementById('share-copy-url'); // let으로 변경 (재할당 가능하게)
+            const shareInstagramBtn = document.getElementById('share-instagram');
+            const copyFeedback = document.getElementById('copy-feedback');
+
+            // --- 초기 설정 ---
+             if(copyFeedback) copyFeedback.style.display = 'none';
+
+
+            // --- 이벤트 리스너 설정 ---
+
+            // 1. '사진선택' 버튼 클릭
+            if (selectButton) {
+                selectButton.addEventListener('click', () => {
+                    if(imageUploadInput) imageUploadInput.click();
+                });
+            } else {
+                console.error("Error: 'select-button' not found.");
+            }
+
+            // 2. 파일 선택 시
+            if (imageUploadInput) {
+                imageUploadInput.addEventListener('change', (event) => {
+                    const file = event.target.files[0];
+                    if (file) {
+                        // 이미지 파일 타입 검사
+                        if (!file.type.startsWith('image/')) {
+                            if(errorMessage){
+                                errorMessage.textContent = '이미지 파일(jpg, png 등)만 업로드 가능합니다.';
+                                errorMessage.style.display = 'block';
+                            }
+                            resetToUploadState(); // 상태 초기화
+                            return; // 처리 중단
+                        }
+
+                        // UI 업데이트
+                        if(uploadBox) uploadBox.style.display = 'none';
+                        if(loadingMessage) loadingMessage.style.display = 'none';
+                        if(errorMessage) errorMessage.style.display = 'none';
+
+                        // FileReader로 이미지 읽어서 미리보기 생성
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            if(uploadedImagePreview) {
+                                uploadedImagePreview.src = e.target.result;
+                                uploadedImagePreview.style.display = 'block';
+                            }
+                            if(analyzeButton) {
+                                analyzeButton.style.display = 'block';
+                                analyzeButton.disabled = false;
+                                analyzeButton.textContent = '분석 시작하기';
+                            }
+                        }
+                        reader.onerror = () => {
+                            console.error("파일 읽기 오류 발생");
+                            if(errorMessage) {
+                                errorMessage.textContent = '파일을 읽는 중 오류가 발생했습니다.';
+                                errorMessage.style.display = 'block';
+                            }
+                            resetToUploadState(); // 오류 시 초기 상태로
+                        }
+                        reader.readAsDataURL(file); // 파일 읽기 시작
+                    }
+                });
+            } else {
+                 console.error("Error: 'imageUpload' input not found.");
+            }
+
+            // 3. '분석 시작하기' 버튼 클릭
+            if (analyzeButton) {
+                analyzeButton.addEventListener('click', async () => {
+                    // 파일 선택 여부 재확인
+                    if (!imageUploadInput || !imageUploadInput.files || imageUploadInput.files.length === 0) {
+                        if(errorMessage) {
+                            errorMessage.textContent = '분석할 이미지를 먼저 선택해주세요.';
+                            errorMessage.style.display = 'block';
+                        }
+                        return;
+                    }
+
+                    // 로딩 상태 UI 업데이트
+                    analyzeButton.disabled = true;
+                    analyzeButton.textContent = '분석 중...';
+                    if(loadingMessage) {
+                        loadingMessage.textContent = 'AI 모델 로딩 및 분석 중...';
+                        loadingMessage.style.display = 'block';
+                    }
+                    if(errorMessage) errorMessage.style.display = 'none';
+                    if(uploadedImagePreview) uploadedImagePreview.classList.add('loading');
+
+                    try {
+                        // Teachable Machine 모델 로드 (아직 로드 안됐으면)
+                        if (!model) {
+                            console.log("모델 로딩 시작:", modelURL);
+                             if(loadingMessage) loadingMessage.textContent = 'AI 모델 로딩 중...';
+                            model = await tmImage.load(modelURL, metadataURL);
+                            console.log("모델 로딩 완료.");
+                        } else {
+                            console.log("캐시된 모델 사용.");
+                        }
+
+                        // 예측 실행
+                        console.log("이미지 예측 시작...");
+                        if(loadingMessage) loadingMessage.textContent = 'AI가 이미지를 분석 중입니다...';
+                        const imageElement = document.getElementById('uploadedImagePreview'); // 여기서 다시 가져옴
+                        if(!imageElement) throw new Error("Uploaded image preview element not found for prediction.");
+
+                        const predictions = await model.predict(imageElement);
+                        console.log("예측 결과:", predictions);
+
+                        displayResults(predictions); // 결과 표시 함수 호출
+                        console.log("분석 완료.");
+
+                    } catch (error) {
+                        // 오류 처리
+                        console.error("분석 과정 오류:", error);
+                        if(errorMessage) {
+                            if (error.message && error.message.includes('404')) {
+                                errorMessage.textContent = `모델 파일(${modelURL} 또는 ${metadataURL})을 찾을 수 없습니다. 경로를 확인해주세요. (404)`;
+                            } else {
+                                errorMessage.textContent = `분석 중 오류가 발생했습니다: ${error.message || '알 수 없는 오류'}`;
+                            }
+                            errorMessage.style.display = 'block';
+                        }
+                        // UI 복구
+                        if(loadingMessage) loadingMessage.style.display = 'none';
+                        analyzeButton.disabled = false;
+                        analyzeButton.textContent = '분석 시작하기';
+                        analyzeButton.style.display = 'block';
+
+                    } finally {
+                        // 로딩 상태 해제
+                        if(uploadedImagePreview) uploadedImagePreview.classList.remove('loading');
+                    }
+                });
+            } else {
+                 console.error("Error: 'analyze-button' not found.");
+            }
+
+            // 4. '뒤로가기(←)' 버튼 클릭
+            if (backButton) {
+                backButton.addEventListener('click', () => {
+                    // 갤러리 페이지(메인)로 이동
+                    window.location.href = "{{ url_for('index') }}";
+                });
+            } else {
+                console.error("Error: 'back-button' not found.");
+            }
+
+            // 5. '다시 시도하기' 버튼 클릭
+            if (retryButton) {
+                retryButton.addEventListener('click', resetToUploadState);
+            } else {
+                 console.error("Error: 'retry-button' not found.");
+            }
+
+
+            // --- 함수 정의 ---
+
+            /**
+             * Teachable Machine 예측 결과를 받아 화면에 표시하고 공유 버튼 설정
+             * @param {Array<object>} predictions - model.predict()로부터 반환된 예측 결과 배열
+             */
+            function displayResults(predictions) {
+                // 예측 결과 유효성 검사
+                 if (!predictions || predictions.length === 0) {
+                    console.error("표시할 예측 결과 데이터가 없습니다.");
+                    if(errorMessage){
+                       errorMessage.textContent = '분석 결과를 받지 못했습니다.';
+                       errorMessage.style.display = 'block';
+                    }
+                    resetToUploadState();
+                    return;
+                }
+
+                // 확률 기준으로 내림차순 정렬
+                predictions.sort((a, b) => b.probability - a.probability);
+
+                const topPrediction = predictions[0]; // 가장 확률 높은 결과
+                const topClassName = topPrediction.className; // 예측된 클래스 이름 (캐릭터 이름)
+                const topProbability = (topPrediction.probability * 100).toFixed(1); // 확률
+
+                // 결과 화면 요소 업데이트
+                if(topCharacterNameEl) topCharacterNameEl.textContent = topClassName;
+                if(resultUserImageEl && uploadedImagePreview) {
+                    resultUserImageEl.src = uploadedImagePreview.src;
+                    resultUserImageEl.alt = "사용자 사진";
+                }
+
+                // characterMap에서 해당 캐릭터의 이미지 파일명 찾기
+                const characterImageFilename = characterMap1[topClassName];
+                if (resultCharacterImageEl) {
+                    if (characterImageFilename) {
+                        // 캐릭터 이미지 경로 설정 (/static/characters/파일명.jpg)
+                        resultCharacterImageEl.src = `/static/character1/${characterImageFilename}`; // 직접 경로 구성
+                        resultCharacterImageEl.alt = `${topClassName} 이미지`;
+                        resultCharacterImageEl.style.display = '';
+                    } else {
+                        // characterMap에 없는 경우 처리
+                        console.warn(`[주의] characterMap1에 '${topClassName}' 클래스에 대한 이미지가 정의되지 않았습니다.`);
+                        resultCharacterImageEl.src = '#'; // 기본 이미지 또는 빈 값
+                        resultCharacterImageEl.alt = '캐릭터 이미지 없음';
+                    }
+                }
+
+                // 결과 텍스트 업데이트
+                if(resultTextEl) resultTextEl.textContent = `AI는 당신의 얼굴과 가장 닮은 캐릭터로\n'${topClassName}'를 ${topProbability}% 확률로 예측했습니다.`;
+
+                // 상세 예측 결과 막대 그래프 생성
+                if(predictionsListDiv) {
+                    predictionsListDiv.innerHTML = ''; // 기존 내용 비우기
+                    predictions.slice(0, 5).forEach((pred, index) => { // 상위 5개 결과만 표시
+                        const barDiv = document.createElement('div');
+                        barDiv.className = 'prediction-bar';
+
+                        const labelSpan = document.createElement('span');
+                        labelSpan.className = 'prediction-label';
+                        labelSpan.textContent = pred.className;
+                        labelSpan.title = pred.className; // 툴팁
+
+                        const progressBgDiv = document.createElement('div');
+                        progressBgDiv.className = 'prediction-progress-bg';
+
+                        const progressDiv = document.createElement('div');
+                        progressDiv.className = 'prediction-progress';
+                        if (index === 0) {
+                            progressDiv.classList.add('top'); // 1위 강조
+                        }
+                        const percentage = (pred.probability * 100).toFixed(1);
+                        // 애니메이션 효과를 위해 setTimeout 사용
+                         setTimeout(() => {
+                           progressDiv.style.width = `${percentage}%`;
+                         }, 50 * index); // 순차적 애니메이션
+
+                        progressBgDiv.appendChild(progressDiv);
+                        barDiv.appendChild(labelSpan);
+                        barDiv.appendChild(progressBgDiv);
+                        predictionsListDiv.appendChild(barDiv);
+                    });
+                }
+
+                // --- 공유 버튼 설정 ---
+                const currentUrl = window.location.href; // 현재 페이지 URL
+                // 공유할 텍스트 (캐릭터 이름, 확률, 중국어 포함)
+                const shareTextBase = `AI가 분석한 나와 닮은 귀멸의 칼날 캐릭터는 '${topClassName}'(${topProbability}%) 이래요! 你也来试试吧！ ${currentUrl}`;
+                const encodedShareText = encodeURIComponent(shareTextBase);
+                const encodedUrl = encodeURIComponent(currentUrl);
+
+                // Facebook 공유 링크 설정
+                if(shareFacebookBtn) shareFacebookBtn.href = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}"e=${encodedShareText}`;
+
+                // Twitter(X) 공유 링크 설정
+                if(shareTwitterBtn) shareTwitterBtn.href = `https://twitter.com/intent/tweet?text=${encodedShareText}`;
+
+                // URL 복사 버튼 이벤트 리스너 (중복 방지 위해 기존 리스너 제거 후 재설정)
+                if (shareCopyUrlBtn) {
+                    const newCopyBtn = shareCopyUrlBtn.cloneNode(true); // 버튼 복제 (리스너 없음)
+                    if(shareCopyUrlBtn.parentNode){
+                       shareCopyUrlBtn.parentNode.replaceChild(newCopyBtn, shareCopyUrlBtn); // 기존 버튼을 복제본으로 교체
+                    }
+                    shareCopyUrlBtn = newCopyBtn; // 참조 업데이트
+
+                    shareCopyUrlBtn.addEventListener('click', () => {
+                        navigator.clipboard.writeText(currentUrl).then(() => {
+                            // 성공 시 피드백 표시
+                            if (copyFeedback) {
+                                copyFeedback.style.display = 'inline'; // '복사 완료!' 메시지 보이기
+                                // 2초 후에 자동으로 숨김
+                                setTimeout(() => {
+                                    copyFeedback.style.display = 'none';
+                                }, 2000);
+                            }
+                        }).catch(err => {
+                            console.error('URL 복사 실패:', err);
+                            alert('URL 복사에 실패했습니다. 수동으로 복사해주세요.'); // 사용자 알림
+                        });
+                    });
+                }
+                // Instagram 버튼은 기본 링크만 사용 (JS 설정 불필요)
+
+                // --- 최종 UI 전환 ---
+                if(loadingMessage) loadingMessage.style.display = 'none';
+                if(uploadSection) uploadSection.style.display = 'none';
+                if(resultSection) resultSection.style.display = 'block';
+                if(analyzeButton) { // 분석 버튼 상태 초기화
+                   analyzeButton.textContent = '분석 시작하기';
+                   analyzeButton.disabled = false;
+                }
+            }
+
+            /**
+             * UI를 초기 파일 업로드 상태로 되돌리는 함수
+             */
+            function resetToUploadState() {
+                // 섹션 표시/숨김
+                 if(resultSection) resultSection.style.display = 'none';
+                 if(uploadSection) uploadSection.style.display = 'block';
+
+                 // 업로드 섹션 내 요소 초기화
+                 if(uploadBox) uploadBox.style.display = 'block';
+                 if(uploadedImagePreview) {
+                    uploadedImagePreview.src = '#';
+                    uploadedImagePreview.style.display = 'none';
+                    uploadedImagePreview.classList.remove('loading');
+                 }
+                 if(imageUploadInput) imageUploadInput.value = null; // ★ 중요: 파일 선택 상태 초기화
+                 if(errorMessage) errorMessage.style.display = 'none';
+                 if(loadingMessage) loadingMessage.style.display = 'none';
+                 if(analyzeButton) {
+                    analyzeButton.style.display = 'none';
+                    analyzeButton.disabled = true;
+                    analyzeButton.textContent = '분석 시작하기';
+                 }
+
+                 // 결과 섹션 내용 초기화
+                 if(topCharacterNameEl) topCharacterNameEl.textContent = '';
+                 if(resultUserImageEl) resultUserImageEl.src = '#';
+                 if(resultCharacterImageEl) resultCharacterImageEl.src = '#';
+                 if(resultTextEl) resultTextEl.textContent = '';
+                 if(predictionsListDiv) predictionsListDiv.innerHTML = '';
+                 if(copyFeedback) copyFeedback.style.display = 'none'; // 복사 피드백 숨김
+
+                 console.log("UI가 초기 업로드 상태로 재설정되었습니다.");
+            }
+
+        }); // End of DOMContentLoaded listener
+
+    </script>
+
+</body>
+</html>
